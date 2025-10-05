@@ -1,0 +1,522 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Add CSRF token meta tag -->
+<meta name="csrf-token" content="{{ csrf_token }}">
+{% csrf_token %}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="display-4">
+                <i class="fas fa-chart-line text-primary me-3"></i>Stock Dashboard
+            </h1>
+            <div>
+                <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#addStockModal">
+                    <i class="fas fa-plus me-2"></i>Add Stock
+                </button>
+                <button class="btn btn-outline-primary" onclick="refreshPage()">
+                    <i class="fas fa-sync-alt me-2"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Market Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card metric-card">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Total Stocks</h5>
+                        <h2 class="mb-0">{{ market_summary.total_stocks|default:0 }}</h2>
+                    </div>
+                    <i class="fas fa-chart-line fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Gainers</h5>
+                        <h2 class="mb-0">{{ market_summary.gainers|default:0 }}</h2>
+                    </div>
+                    <i class="fas fa-arrow-up fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Losers</h5>
+                        <h2 class="mb-0">{{ market_summary.losers|default:0 }}</h2>
+                    </div>
+                    <i class="fas fa-arrow-down fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Avg Price</h5>
+                        <h2 class="mb-0">${{ market_summary.avg_price|floatformat:2|default:"0.00" }}</h2>
+                    </div>
+                    <i class="fas fa-dollar-sign fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Gainers and Losers -->
+{% if gainers or losers %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-arrow-up me-2"></i>Top Gainers</h5>
+            </div>
+            <div class="card-body">
+                {% for stock in gainers %}
+                <div class="d-flex justify-content-between align-items-center py-2 {% if not forloop.last %}border-bottom{% endif %}">
+                    <div>
+                        <strong>{{ stock.symbol }}</strong>
+                        <div class="text-muted small">{{ stock.name|truncatechars:30 }}</div>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold">${{ stock.current_price|floatformat:2 }}</div>
+                        <div class="text-success small">+{{ stock.price_change_percent|floatformat:2 }}%</div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">No gainers data available</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-arrow-down me-2"></i>Top Losers</h5>
+            </div>
+            <div class="card-body">
+                {% for stock in losers %}
+                <div class="d-flex justify-content-between align-items-center py-2 {% if not forloop.last %}border-bottom{% endif %}">
+                    <div>
+                        <strong>{{ stock.symbol }}</strong>
+                        <div class="text-muted small">{{ stock.name|truncatechars:30 }}</div>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold">${{ stock.current_price|floatformat:2 }}</div>
+                        <div class="text-danger small">{{ stock.price_change_percent|floatformat:2 }}%</div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">No losers data available</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Stock Cards -->
+<div class="row">
+    <div class="col-12 mb-3">
+        <h3>Stock Portfolio</h3>
+    </div>
+    
+    {% for stock in stocks %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card stock-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h5 class="card-title mb-1">{{ stock.symbol }}</h5>
+                        <p class="card-text text-muted small mb-2">{{ stock.name|truncatechars:40 }}</p>
+                        <h4 class="text-primary mb-0">${{ stock.current_price|floatformat:2 }}</h4>
+                        {% if stock.price_change_percent %}
+                        <small class="{% if stock.price_change_percent > 0 %}text-success{% else %}text-danger{% endif %}">
+                            {% if stock.price_change_percent > 0 %}+{% endif %}{{ stock.price_change_percent|floatformat:2 }}%
+                        </small>
+                        {% endif %}
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-secondary">{{ stock.sector|default:"N/A" }}</span>
+                    </div>
+                </div>
+                
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="bg-light p-2 rounded text-center">
+                            <small class="text-muted d-block">Volume</small>
+                            <strong>{{ stock.volume|floatformat:0 }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="bg-light p-2 rounded text-center">
+                            <small class="text-muted d-block">P/E Ratio</small>
+                            <strong>{{ stock.pe_ratio|floatformat:2|default:"N/A" }}</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="bg-light p-2 rounded text-center">
+                            <small class="text-muted d-block">52W High</small>
+                            <strong>${{ stock.52_week_high|floatformat:2|default:"N/A" }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="bg-light p-2 rounded text-center">
+                            <small class="text-muted d-block">52W Low</small>
+                            <strong>${{ stock.52_week_low|floatformat:2|default:"N/A" }}</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'stock_detail' stock.symbol %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-chart-area me-1"></i>View Details
+                    </a>
+                    <button class="btn btn-success btn-sm" data-stock-symbol="{{ stock.symbol }}" data-stock-price="{{ stock.current_price|default:0 }}" onclick="addToPortfolio(this.getAttribute('data-stock-symbol'), this.getAttribute('data-stock-price'))">
+                        <i class="fas fa-plus me-1"></i>Add to Portfolio
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card-footer bg-light">
+                <small class="text-muted">
+                    <i class="fas fa-clock me-1"></i>
+                    Updated: {{ stock.last_updated|date:"M d, Y H:i"|default:"N/A" }}
+                </small>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info text-center">
+            <h4><i class="fas fa-info-circle me-2"></i>No Stocks Available</h4>
+            <p>Add some stocks to get started with your analysis!</p>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStockModal">
+                <i class="fas fa-plus me-2"></i>Add Your First Stock
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if stocks.has_other_pages %}
+<nav aria-label="Stock pagination" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if stocks.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1">&laquo; First</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ stocks.previous_page_number }}">Previous</a>
+            </li>
+        {% endif %}
+        
+        <li class="page-item active">
+            <span class="page-link">
+                Page {{ stocks.number }} of {{ stocks.paginator.num_pages }}
+            </span>
+        </li>
+        
+        {% if stocks.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ stocks.next_page_number }}">Next</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ stocks.paginator.num_pages }}">Last &raquo;</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<!-- Add Stock Modal -->
+<div class="modal fade" id="addStockModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus-circle me-2"></i>Add Stock to Database
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addStockForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="stockSymbol" class="form-label">Stock Symbol</label>
+                        <input type="text" class="form-control" id="stockSymbol" 
+                               placeholder="e.g., AAPL, GOOGL, MSFT" required>
+                        <div class="form-text">
+                            Enter a valid stock symbol (e.g., AAPL for Apple Inc.)
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        This will fetch real-time data from Yahoo Finance and add the stock to our database.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary" onclick="addStock()">
+                    <i class="fas fa-download me-1"></i>
+                    <span id="addStockBtnText">Add Stock</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add to Portfolio Modal -->
+<div class="modal fade" id="addToPortfolioModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-briefcase me-2"></i>Add to Portfolio
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addToPortfolioForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Stock Symbol</label>
+                        <input type="text" class="form-control" id="portfolioSymbol" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="portfolioQuantity" class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="portfolioQuantity" 
+                               min="0.01" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="portfolioPrice" class="form-label">Purchase Price ($)</label>
+                        <input type="number" class="form-control" id="portfolioPrice" 
+                               min="0.01" step="0.01" required>
+                        <div class="form-text">Current market price will be pre-filled</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-success" onclick="confirmAddToPortfolio()">
+                    <i class="fas fa-plus me-1"></i>Add to Portfolio
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden input for user authentication status -->
+<input type="hidden" id="userAuthStatus" value="{{ user.is_authenticated|yesno:'true,false' }}">
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Global variables
+let currentStockForPortfolio = {};
+
+// Get user authentication status from hidden input
+const userIsAuthenticated = document.getElementById('userAuthStatus').value === 'true';
+
+// Function to get CSRF token
+function getCSRFToken() {
+    // First try to get from meta tag
+    let token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    // If not found, try to get from form input
+    if (!token) {
+        token = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+    }
+    
+    // If still not found, try to get from cookie
+    if (!token) {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === 'csrftoken') {
+                token = value;
+                break;
+            }
+        }
+    }
+    
+    return token;
+}
+
+// Add stock function
+function addStock() {
+    const symbol = document.getElementById('stockSymbol').value.trim().toUpperCase();
+    const btn = document.querySelector('#addStockModal .btn-primary');
+    const btnText = document.getElementById('addStockBtnText');
+    
+    if (!symbol) {
+        alert('Please enter a stock symbol');
+        return;
+    }
+    
+    // Show loading state
+    btn.disabled = true;
+    btnText.textContent = 'Adding...';
+    
+    // Get CSRF token
+    const csrfToken = getCSRFToken();
+    
+    if (!csrfToken) {
+        console.error('CSRF token not found');
+        alert('Security token not found. Please refresh the page.');
+        btn.disabled = false;
+        btnText.textContent = 'Add Stock';
+        return;
+    }
+    
+    console.log('Sending request with symbol:', symbol);
+    console.log('CSRF token:', csrfToken ? 'Found' : 'Not found');
+    
+    fetch('/api/add-stock/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({"symbol": symbol})
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            // Success - close modal and reload page
+            bootstrap.Modal.getInstance(document.getElementById('addStockModal')).hide();
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        alert('Error adding stock: ' + error.message);
+    })
+    .finally(() => {
+        // Reset button state
+        btn.disabled = false;
+        btnText.textContent = 'Add Stock';
+    });
+}
+
+// Add to portfolio function
+function addToPortfolio(symbol, price) {
+    if (!userIsAuthenticated) {
+        alert('Please login to add stocks to your portfolio');
+        return;
+    }
+    
+    currentStockForPortfolio = {"symbol": symbol, "price": parseFloat(price)};
+    
+    // Pre-fill the modal
+    document.getElementById('portfolioSymbol').value = symbol;
+    document.getElementById('portfolioPrice').value = price;
+    document.getElementById('portfolioQuantity').value = '';
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('addToPortfolioModal'));
+    modal.show();
+}
+
+function confirmAddToPortfolio() {
+    const symbol = document.getElementById('portfolioSymbol').value;
+    const quantity = parseFloat(document.getElementById('portfolioQuantity').value);
+    const price = parseFloat(document.getElementById('portfolioPrice').value);
+    
+    if (!quantity || quantity <= 0) {
+        alert('Please enter a valid quantity');
+        return;
+    }
+    
+    if (!price || price <= 0) {
+        alert('Please enter a valid purchase price');
+        return;
+    }
+    
+    // Get CSRF token
+    const csrfToken = getCSRFToken();
+    
+    if (!csrfToken) {
+        alert('Security token not found. Please refresh the page.');
+        return;
+    }
+    
+    fetch('/api/add-to-portfolio/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            "symbol": symbol,
+            "quantity": quantity,
+            "purchase_price": price
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            // Hide modal
+            bootstrap.Modal.getInstance(document.getElementById('addToPortfolioModal')).hide();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error adding to portfolio: ' + error.message);
+    });
+}
+
+function refreshPage() {
+    window.location.reload();
+}
+
+// Enter key support for add stock modal
+document.getElementById('stockSymbol').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        addStock();
+    }
+});
+</script>
+{% endblock %}

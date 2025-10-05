@@ -1,0 +1,323 @@
+/* Custom CSS for Stock Analysis Application */
+
+/* General Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* Navigation */
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+.navbar-nav .nav-link {
+    font-weight: 500;
+    margin: 0 10px;
+    transition: color 0.3s ease;
+}
+
+.navbar-nav .nav-link:hover {
+    color: #ffffff !important;
+    text-shadow: 0 0 5px rgba(255,255,255,0.5);
+}
+
+/* Cards */
+.card {
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.stock-card {
+    border-left: 4px solid #007bff;
+}
+
+.stock-card:hover {
+    border-left-color: #0056b3;
+}
+
+/* Metric Cards */
+.metric-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+}
+
+.metric-card .card-body {
+    position: relative;
+    overflow: hidden;
+}
+
+.metric-card .card-body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    transform: translate(30%, -30%);
+}
+
+/* Chart Containers */
+.chart-container {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin: 20px 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-left: 5px solid #007bff;
+}
+
+/* Buttons */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    border: none;
+    box-shadow: 0 2px 5px rgba(0,123,255,0.3);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(45deg, #0056b3, #004085);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0,123,255,0.4);
+}
+
+.btn-success {
+    background: linear-gradient(45deg, #28a745, #1e7e34);
+    border: none;
+    box-shadow: 0 2px 5px rgba(40,167,69,0.3);
+}
+
+.btn-success:hover {
+    background: linear-gradient(45deg, #1e7e34, #155724);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(40,167,69,0.4);
+}
+
+.btn-outline-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0,123,255,0.3);
+}
+
+/* Tables */
+.table {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.table thead th {
+    background: linear-gradient(45deg, #343a40, #495057);
+    color: white;
+    border: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.02);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Progress and Status */
+.positive {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.negative {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+/* Alerts */
+.alert {
+    border: none;
+    border-radius: 10px;
+    border-left: 5px solid;
+}
+
+.alert-success {
+    border-left-color: #28a745;
+    background: linear-gradient(90deg, #d4edda, #f8fff9);
+}
+
+.alert-danger {
+    border-left-color: #dc3545;
+    background: linear-gradient(90deg, #f8d7da, #fff5f5);
+}
+
+.alert-info {
+    border-left-color: #17a2b8;
+    background: linear-gradient(90deg, #d1ecf1, #f0fdff);
+}
+
+/* Modal Improvements */
+.modal-content {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+    border-bottom: 2px solid #e9ecef;
+    border-radius: 15px 15px 0 0;
+    background: linear-gradient(45deg, #f8f9fa, #ffffff);
+}
+
+.modal-footer {
+    border-top: 2px solid #e9ecef;
+    border-radius: 0 0 15px 15px;
+    background: linear-gradient(45deg, #ffffff, #f8f9fa);
+}
+
+/* Form Improvements */
+.form-control {
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.15);
+    transform: translateY(-1px);
+}
+
+/* Breadcrumb */
+.breadcrumb {
+    background: linear-gradient(45deg, #e9ecef, #f8f9fa);
+    border-radius: 10px;
+    padding: 12px 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    content: "→";
+    color: #007bff;
+    font-weight: bold;
+}
+
+/* Footer */
+footer {
+    background: linear-gradient(45deg, #343a40, #495057) !important;
+    border-top: 5px solid #007bff;
+}
+
+/* Loading States */
+.btn:disabled {
+    opacity: 0.6;
+    transform: none !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .btn {
+        margin-bottom: 0.5rem;
+    }
+    
+    .chart-container {
+        padding: 15px;
+        margin: 10px 0;
+    }
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding: 0 10px;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+}
+
+/* Animation Classes */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #007bff;
+    border-radius: 10px;
+    transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #0056b3;
+}
+
+/* Utility Classes */
+.text-shadow {
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.gradient-text {
+    background: linear-gradient(45deg, #007bff, #28a745);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.glass-effect {
+    background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+}

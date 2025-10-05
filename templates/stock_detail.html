@@ -1,0 +1,446 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ stock.symbol }} - {{ stock.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item active">{{ stock.symbol }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- Stock Header -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="d-flex align-items-center mb-3">
+            <div class="me-4">
+                <h1 class="display-5 mb-1">{{ stock.name }}</h1>
+                <h2 class="h4 text-muted">{{ stock.symbol }}</h2>
+            </div>
+            <div class="text-end">
+                <h2 class="display-6 text-primary mb-0">${{ stock.current_price|floatformat:2 }}</h2>
+                {% if stock.price_change_percent %}
+                <p class="mb-0 {% if stock.price_change_percent > 0 %}text-success{% else %}text-danger{% endif %}">
+                    {% if stock.price_change_percent > 0 %}+{% endif %}${{ stock.price_change|floatformat:2 }}
+                    ({% if stock.price_change_percent > 0 %}+{% endif %}{{ stock.price_change_percent|floatformat:2 }}%)
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <button class="btn btn-outline-primary me-2" onclick="refreshStockData()">
+            <i class="fas fa-sync-alt me-1"></i>Refresh Data
+        </button>
+        {% if user.is_authenticated %}
+        <button class="btn btn-success" onclick="addToPortfolio()">
+            <i class="fas fa-plus me-1"></i>Add to Portfolio
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Stock Metrics -->
+<div class="row mb-4">
+    <div class="col-md-2 col-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="card-title text-muted">Previous Close</h6>
+                <h5 class="text-dark">${{ stock.previous_close|floatformat:2|default:"N/A" }}</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="card-title text-muted">Volume</h6>
+                <h5 class="text-dark">{{ stock.volume|floatformat:0 }}</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="card-title text-muted">Market Cap</h6>
+                <h5 class="text-dark">
+                    {% if stock.market_cap %}
+                        ${{ stock.market_cap|floatformat:0 }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="card-title text-muted">P/E Ratio</h6>
+                <h5 class="text-dark">{{ stock.pe_ratio|floatformat:2|default:"N/A" }}</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="card-title text-muted">52W High</h6>
+                <h5 class="text-dark">${{ stock.52_week_high|floatformat:2|default:"N/A" }}</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="card-title text-muted">52W Low</h6>
+                <h5 class="text-dark">${{ stock.52_week_low|floatformat:2|default:"N/A" }}</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+{% if charts.price_chart %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="chart-container">
+            {{ charts.price_chart|safe }}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Technical Analysis -->
+{% if technical_analysis %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-area me-2"></i>Technical Analysis</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <div class="bg-light p-3 rounded text-center">
+                            <small class="text-muted d-block">SMA 10</small>
+                            <strong>${{ technical_analysis.sma_10|default:"N/A" }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="bg-light p-3 rounded text-center">
+                            <small class="text-muted d-block">SMA 20</small>
+                            <strong>${{ technical_analysis.sma_20|default:"N/A" }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="bg-light p-3 rounded text-center">
+                            <small class="text-muted d-block">RSI</small>
+                            <strong class="{% if technical_analysis.rsi > 70 %}text-danger{% elif technical_analysis.rsi < 30 %}text-success{% endif %}">
+                                {{ technical_analysis.rsi|default:"N/A" }}
+                            </strong>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="bg-light p-3 rounded text-center">
+                            <small class="text-muted d-block">Beta</small>
+                            <strong>{{ stock.beta|floatformat:2|default:"N/A" }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Company Info</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Sector:</strong> {{ stock.sector|default:"N/A" }}
+                </div>
+                <div class="mb-3">
+                    <strong>Industry:</strong> {{ stock.industry|default:"N/A" }}
+                </div>
+                <div class="mb-3">
+                    <strong>EPS:</strong> ${{ stock.eps|floatformat:2|default:"N/A" }}
+                </div>
+                <div class="mb-3">
+                    <strong>Dividend Yield:</strong> {{ stock.dividend_yield|floatformat:2|default:"0" }}%
+                </div>
+                <div class="mb-0">
+                    <strong>Book Value:</strong> ${{ stock.book_value|floatformat:2|default:"N/A" }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Price History Table -->
+{% if price_history %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-table me-2"></i>Recent Price History</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Open</th>
+                                <th>High</th>
+                                <th>Low</th>
+                                <th>Close</th>
+                                <th>Volume</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for day in price_history %}
+                            <tr>
+                                <td>{{ day.date|date:"M d, Y" }}</td>
+                                <td>${{ day.open|floatformat:2 }}</td>
+                                <td class="text-success">${{ day.high|floatformat:2 }}</td>
+                                <td class="text-danger">${{ day.low|floatformat:2 }}</td>
+                                <td><strong>${{ day.close|floatformat:2 }}</strong></td>
+                                <td>{{ day.volume|floatformat:0 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Add to Portfolio Modal -->
+<div class="modal fade" id="addToPortfolioModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-briefcase me-2"></i>Add {{ stock.symbol }} to Portfolio
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addToPortfolioForm">
+                    <div class="mb-3">
+                        <label class="form-label">Stock</label>
+                        <input type="text" class="form-control" value="{{ stock.symbol }} - {{ stock.name }}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="portfolioQuantity" class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="portfolioQuantity" 
+                               min="0.01" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="portfolioPrice" class="form-label">Purchase Price ($)</label>
+                        <input type="number" class="form-control" id="portfolioPrice" 
+                               value="{{ stock.current_price }}" min="0.01" step="0.01" required>
+                        <div class="form-text">Current price: ${{ stock.current_price|floatformat:2 }}</div>
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>Total Investment:</strong> $<span id="totalInvestment">0.00</span>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-success" onclick="confirmAddToPortfolio()">
+                    <i class="fas fa-plus me-1"></i>Add to Portfolio
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden data for JavaScript -->
+<script id="stock-data" type="application/json">
+{
+    "symbol": "{{ stock.symbol|escapejs }}",
+    "name": "{{ stock.name|escapejs }}",
+    "currentPrice": {{ stock.current_price|default:0 }},
+    "isAuthenticated": {% if user.is_authenticated %}true{% else %}false{% endif %}
+}
+</script>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+// Get stock data from the hidden script tag
+const stockDataElement = document.getElementById('stock-data');
+const stockData = JSON.parse(stockDataElement.textContent);
+
+function addToPortfolio() {
+    if (!stockData.isAuthenticated) {
+        alert('Please login to add stocks to your portfolio');
+        return;
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('addToPortfolioModal'));
+    modal.show();
+    
+    // Update total investment when values change
+    updateTotalInvestment();
+}
+
+function updateTotalInvestment() {
+    const quantityElement = document.getElementById('portfolioQuantity');
+    const priceElement = document.getElementById('portfolioPrice');
+    
+    if (quantityElement && priceElement) {
+        const quantity = parseFloat(quantityElement.value) || 0;
+        const price = parseFloat(priceElement.value) || 0;
+        const total = quantity * price;
+        const totalElement = document.getElementById('totalInvestment');
+        if (totalElement) {
+            totalElement.textContent = total.toFixed(2);
+        }
+    }
+}
+
+function confirmAddToPortfolio() {
+    const quantity = parseFloat(document.getElementById('portfolioQuantity').value);
+    const price = parseFloat(document.getElementById('portfolioPrice').value);
+    
+    if (!quantity || quantity <= 0) {
+        alert('Please enter a valid quantity');
+        return;
+    }
+    
+    if (!price || price <= 0) {
+        alert('Please enter a valid purchase price');
+        return;
+    }
+    
+    fetch('/api/add-to-portfolio/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+            symbol: stockData.symbol,
+            quantity: quantity,
+            purchase_price: price
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            alert(data.message || 'Successfully added to portfolio');
+            const modalElement = document.getElementById('addToPortfolioModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            }
+            // Reset form
+            document.getElementById('portfolioQuantity').value = '';
+            document.getElementById('portfolioPrice').value = stockData.currentPrice;
+            updateTotalInvestment();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error occurred'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error adding to portfolio: ' + error.message);
+    });
+}
+
+function refreshStockData() {
+    const btn = document.querySelector('button[onclick*="refreshStockData"]');
+    if (!btn) return;
+    
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
+    btn.disabled = true;
+    
+    fetch('/api/refresh-stock/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+            symbol: stockData.symbol
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to refresh stock data'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error refreshing data: ' + error.message);
+    })
+    .finally(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+
+// Add event listeners when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const quantityInput = document.getElementById('portfolioQuantity');
+    const priceInput = document.getElementById('portfolioPrice');
+    
+    if (quantityInput) {
+        quantityInput.addEventListener('input', updateTotalInvestment);
+    }
+    if (priceInput) {
+        priceInput.addEventListener('input', updateTotalInvestment);
+    }
+    
+    // Initialize total investment display
+    updateTotalInvestment();
+});
+</script>
+{% endblock %}
